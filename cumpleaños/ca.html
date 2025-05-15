@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Feliz Cumpleaños Andrea</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: black;
+    }
+
+    #intro {
+      background: black;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 24px;
+      animation: fadeOut 2s 2s forwards;
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        visibility: hidden;
+      }
+    }
+
+    #fireworks {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .card {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ffe6f0;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      text-align: center;
+      opacity: 0;
+      z-index: 20;
+      animation: showCard 1s 4s forwards;
+      backdrop-filter: blur(5px);
+    }
+
+    @keyframes showCard {
+      to {
+        opacity: 1;
+      }
+    }
+
+    .card h1 {
+      font-size: 28px;
+      color: #d63384;
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      font-size: 18px;
+      color: #444;
+    }
+
+    .cake {
+      font-size: 60px;
+      margin-bottom: 15px;
+    }
+
+    /* Botón de inicio */
+    #start-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #d63384;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 100;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      transition: background 0.3s;
+    }
+
+    #start-btn:hover {
+      background-color: #c2185b;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Botón para iniciar sorpresa y audio -->
+  <button id="start-btn">🎵 Comenzar Sorpresa</button>
+
+  <div id="intro">🎉 Cargando sorpresa...</div>
+
+  <div id="fireworks">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="cake">🎂</div>
+    <h1>¡Feliz Cumpleaños Andrea!</h1>
+    <p>Espero y la pases bien en este día muy especial para ti. 💖</p>
+  </div>
+  
+
+  <!-- AUDIO DE FONDO -->
+  <audio id="bg-audio" autoplay loop muted>
+    <source src="happy/On Top Of The World.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let fireworks = [];
+
+    function Firework() {
+      this.x = Math.random() * canvas.width;
+      this.y = canvas.height;
+      this.targetY = Math.random() * canvas.height / 2;
+      this.size = 2;
+      this.speed = 5;
+      this.exploded = false;
+      this.particles = [];
+
+      this.update = function () {
+        if (!this.exploded) {
+          this.y -= this.speed;
+          if (this.y <= this.targetY) {
+            this.exploded = true;
+            for (let i = 0; i < 30; i++) {
+              this.particles.push(new Particle(this.x, this.y));
+            }
+          }
+        } else {
+          this.particles.forEach(p => p.update());
+        }
+      };
+
+      this.draw = function () {
+        if (!this.exploded) {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = "white";
+          ctx.fill();
+        } else {
+          this.particles.forEach(p => p.draw());
+        }
+      };
+    }
+
+    function Particle(x, y) {
+      this.x = x;
+      this.y = y;
+      this.size = Math.random() * 2 + 1;
+      this.speedX = (Math.random() - 0.5) * 6;
+      this.speedY = (Math.random() - 0.5) * 6;
+      this.alpha = 1;
+
+      this.update = function () {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.alpha -= 0.02;
+      };
+
+      this.draw = function () {
+        ctx.globalAlpha = this.alpha;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = "rgb(255, 100, 200)";
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      };
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      fireworks.forEach((fw, index) => {
+        fw.update();
+        fw.draw();
+        if (fw.exploded && fw.particles.every(p => p.alpha <= 0)) {
+          fireworks.splice(index, 1);
+        }
+      });
+      if (Math.random() < 0.05) {
+        fireworks.push(new Firework());
+      }
+      requestAnimationFrame(animate);
+    }
+
+    document.getElementById("start-btn").addEventListener("click", () => {
+      const audio = document.getElementById("bg-audio");
+      audio.muted = false;
+      audio.play();
+      document.getElementById("start-btn").style.display = "none";
+
+      // Iniciar fuegos artificiales después de 2s (como antes)
+      setTimeout(() => {
+        animate();
+      }, 2000);
+    });
+  </script>
+</body>
+</html>
+
+
+
+
